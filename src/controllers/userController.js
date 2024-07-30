@@ -3,14 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import Sequence from '../models/Sequence.js';
 import { Types } from 'mongoose';
-import admin from 'firebase-admin';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { Readable } from 'stream';
 
-// Define __dirname for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const registerUser = async (req, res) => {
   const { name, email, isEdit, id, imageUrl } = req.body;
