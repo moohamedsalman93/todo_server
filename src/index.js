@@ -3,8 +3,17 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
 import cors from 'cors';
+import admin from 'firebase-admin';
+import serviceAccount from './config/serviceAccountKey.json' assert { type: 'json' };
 
 dotenv.config();
+
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: "todo-ee566.appspot.com"
+});
+
 
 connectDB();
 

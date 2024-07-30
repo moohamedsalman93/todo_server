@@ -3,30 +3,35 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import Sequence from '../models/Sequence.js';
 import { Types } from 'mongoose';
+import admin from 'firebase-admin';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { Readable } from 'stream';
+
+// Define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const registerUser = async (req, res) => {
-  const { name, email, isEdit, id } = req.body;
-  const profilePicture = req.file;
+  const { name, email, isEdit, id, imageUrl } = req.body;
 
   try {
-
-    let user = ''
+    let user;
 
     if (isEdit === 'true') {
-      user = await User.findById(id)
-    }
-    else {
+      user = await User.findById(id);
+    } else {
       user = await User.findOne({ email });
     }
 
-    if (user && !isEdit) {
+    if (user && isEdit !== 'true') {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    if (user && isEdit) {
-      user.email = email || user.email
+    if (user && isEdit === 'true') {
+      user.email = email || user.email;
       user.name = name || user.name;
-      user.profilePicture = profilePicture ? profilePicture.path : user.profilePicture;
+      user.profilePicture = imageUrl || user.profilePicture
 
       await user.save();
 
@@ -37,14 +42,14 @@ export const registerUser = async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
-          image: user.profilePicture
-        }
+          image: user.profilePicture,
+        },
       });
     } else {
       const sequence = await Sequence.findOneAndUpdate(
         { _id: "employeeId" },
         { $inc: { sequence_value: 1 } },
-        { new: true, upsert: true } // upsert: true to create the document if it doesn't exist
+        { new: true, upsert: true }
       );
 
       const customId = `emp${sequence.sequence_value.toString().padStart(3, '0')}`;
@@ -54,7 +59,7 @@ export const registerUser = async (req, res) => {
         name,
         email,
         role: "employee",
-        profilePicture: profilePicture ? profilePicture.path : undefined
+        profilePicture:imageUrl
       });
 
       await user.save();
@@ -66,46 +71,15 @@ export const registerUser = async (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
-          image: user.profilePicture
-        }
+          image: user.profilePicture,
+        },
       });
+
     }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-
 };
-
-// export const updatePassword = async (req, res) => {
-//   const { email, password } = req.body;
-
-//   try {
-//     let user = await User.findOne({ email });
-
-//     if (!user) {
-//       return res.status(400).json({ message: 'User not exists' });
-//     }
-
-//     // Hash the password
-//     const salt = await bcrypt.genSalt(10);
-//     const hashedPassword = await bcrypt.hash(password, salt);
-
-//     // Update user's password
-//     user.password = hashedPassword;
-//     await user.save();
-
-//     // Generate JWT token
-//     const token = jwt.sign({ role: user.role, id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-//     res.status(200).json({
-//       message: 'Password updated successfully',
-//       token,
-//       role: user.role
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
 
 export const checkUser = async (req, res) => {
   const { email } = req.body;
